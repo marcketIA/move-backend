@@ -12,10 +12,14 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-// Normaliza quitando espacios y cualquier "/" al final, para que
-// "https://sitio.app" y "https://sitio.app/" (o con un espacio pegado
-// por error al copiar/pegar) se consideren el mismo origen.
-const normalizeOrigin = (value) => (value || '').trim().replace(/\/+$/, '');
+// Normaliza quitando espacios visibles, caracteres invisibles que a veces
+// se cuelan al copiar/pegar (espacios especiales, marcas de formato),
+// mayúsculas/minúsculas, y cualquier "/" al final.
+const normalizeOrigin = (value) => (value || '')
+  .replace(/[\u200B-\u200D\uFEFF\u00A0\u2060]/g, '')
+  .trim()
+  .replace(/\/+$/, '')
+  .toLowerCase();
 
 const configuredOrigins = (process.env.FRONTEND_ORIGIN || '')
   .split(',').map(normalizeOrigin).filter(Boolean);
@@ -37,6 +41,8 @@ const corsOptions = {
     const normalizedOrigin = normalizeOrigin(origin);
     if (!origin || allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
     console.log('[CORS] Rechazado. Origen recibido:', JSON.stringify(origin), '| Permitidos:', allowedOrigins);
+    console.log('[CORS] Códigos de caracteres del origen recibido:', Array.from(normalizedOrigin).map((c) => c.codePointAt(0)).join(','));
+    allowedOrigins.forEach((o) => console.log('[CORS] Códigos de caracteres de un permitido:', Array.from(o).map((c) => c.codePointAt(0)).join(',')));
     return callback(new Error('Origen no autorizado por CORS.'));
   },
   credentials: true,
