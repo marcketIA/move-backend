@@ -170,6 +170,59 @@ export async function countDevicesByUsername(username) {
   return Number(result.rows[0].count);
 }
 
+// ---- Zona Elite: en vivo por Zoom y grabaciones ----
+
+export async function saveEliteSession(record) {
+  const result = await pool.query(
+    `INSERT INTO elite_sessions (course_type, session_date, zoom_link, recording_uid, created_at)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [record.courseType, record.sessionDate, record.zoomLink || null, record.recordingUid || null, record.createdAt]
+  );
+  return rowToEliteSession(result.rows[0]);
+}
+
+// Sesión de HOY para un curso — la usa /premium/live para saber si hay
+// clase en vivo ahora mismo y con qué link de Zoom.
+export async function findTodaysEliteSession(courseType, dayStart, dayEnd) {
+  const result = await pool.query(
+    `SELECT * FROM elite_sessions
+     WHERE course_type = $1 AND session_date >= $2 AND session_date < $3
+     ORDER BY session_date DESC LIMIT 1`,
+    [courseType, dayStart, dayEnd]
+  );
+  return result.rows[0] ? rowToEliteSession(result.rows[0]) : null;
+}
+
+// Grabaciones vigentes (últimos 14 días) — las usa /premium/replays.
+export async function listActiveEliteRecordings(sinceEpoch) {
+  const result = await pool.query(
+    `SELECT * FROM elite_sessions
+     WHERE recording_uid IS NOT NULL AND session_date >= $1
+     ORDER BY session_date DESC`,
+    [sinceEpoch]
+  );
+  return result.rows.map(rowToEliteSession);
+}
+
+export async function attachRecordingToSession(sessionId, recordingUid) {
+  const result = await pool.query(
+    'UPDATE elite_sessions SET recording_uid = $1 WHERE id = $2 RETURNING *',
+    [recordingUid, sessionId]
+  );
+  return result.rows[0] ? rowToEliteSession(result.rows[0]) : null;
+}
+
+function rowToEliteSession(row) {
+  return {
+    id: row.id,
+    courseType: row.course_type,
+    sessionDate: Number(row.session_date),
+    zoomLink: row.zoom_link,
+    recordingUid: row.recording_uid,
+    createdAt: Number(row.created_at)
+  };
+}
+
 function rowToDevice(row) {
   return {
     id: row.id,
