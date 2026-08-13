@@ -1,0 +1,57 @@
+/* institutional-radar.css — requiere variables.css del sitio. Prefijo ir-. */
+
+.ir-panel {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-lg, 16px);
+  padding: 18px;
+}
+.ir-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted, #6E7688);
+  margin-bottom: 16px;
+}
+.ir-tag {
+  font-size: 9px;
+  color: var(--text-faint, #454D5C);
+  border: 1px solid var(--line-soft, #1A222E);
+  border-radius: 999px;
+  padding: 2px 8px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ir-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ir-row .sym {
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  color: var(--text-secondary, #B8BFC9);
+}
+.ir-track {
+  height: 6px;
+  background: var(--line-soft, #1A222E);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ir-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dim, #8A7133), var(--gold-bright, #E8C878));
+  border-radius: 999px;
+}
+.ir-row .val {
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  color: var(--text-faint, #454D5C);
+  text-align: right;
+}

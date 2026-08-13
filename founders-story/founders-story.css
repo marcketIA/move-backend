@@ -1,0 +1,66 @@
+/* founders-story.css — requiere variables.css del sitio. Prefijo fs-. */
+
+.fs-story { max-width: 720px; margin: 0 auto; text-align: center; }
+.fs-eyebrow {
+  font-family: var(--font-data, monospace);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--gold, #D4A94F);
+  margin-bottom: 10px;
+}
+.fs-title {
+  font-family: var(--font-display, sans-serif);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary, #F3F0E8);
+  margin-bottom: 16px;
+}
+.fs-lead {
+  font-size: 15px;
+  color: var(--text-secondary, #B8BFC9);
+  margin-bottom: 32px;
+  line-height: 1.7;
+}
+.fs-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  text-align: left;
+}
+.fs-col {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-lg, 16px);
+  padding: 20px;
+}
+.fs-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-data, monospace);
+  font-weight: 700;
+  color: var(--gold-bright, #E8C878);
+  background: linear-gradient(160deg, rgba(212,169,79,.3), rgba(34,181,123,.12));
+  border: 1px solid var(--gold-dim, #8A7133);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.fs-avatar-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fs-col h4 {
+  font-family: var(--font-display, sans-serif);
+  font-size: 15px;
+  color: var(--text-primary, #F3F0E8);
+  margin-bottom: 6px;
+}
+.fs-col p {
+  font-size: 13px;
+  color: var(--text-secondary, #B8BFC9);
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .fs-cols { grid-template-columns: 1fr; }
+}

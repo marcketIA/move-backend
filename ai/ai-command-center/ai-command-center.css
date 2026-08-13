@@ -1,0 +1,72 @@
+/* ai-command-center.css — requiere variables.css del sitio. Prefijo acc-. */
+
+.acc-wrap {
+  background: radial-gradient(ellipse at 20% 0%, rgba(212,169,79,.08), transparent 60%), var(--bg-primary, #0A0E14);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: 20px;
+  padding: 24px;
+}
+.acc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.acc-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.acc-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--gold-dim, #8A7133);
+}
+.acc-title {
+  font-family: var(--font-display, sans-serif);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary, #F3F0E8);
+  letter-spacing: .02em;
+}
+.acc-title span { color: var(--gold, #D4A94F); }
+.acc-subtitle {
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-muted, #6E7688);
+}
+.acc-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--long, #22B57B);
+}
+.acc-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--long, #22B57B);
+  animation: accPulse 2s infinite;
+}
+@keyframes accPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+.acc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.acc-cell-wide { grid-column: 1 / -1; }
+
+@media (max-width: 700px) {
+  .acc-grid { grid-template-columns: 1fr; }
+}

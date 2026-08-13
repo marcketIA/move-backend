@@ -1,0 +1,21 @@
+/* elite-badges.css — reutiliza SOLO las cifras ya establecidas en el sitio
+   (500+, 2500+, 1000+). No inventar numeros nuevos aqui. Prefijo eb-. */
+
+.eb-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.eb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  color: var(--gold, #D4A94F);
+  background: rgba(212, 169, 79, 0.08);
+  border: 1px solid var(--gold-dim, #8A7133);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+.eb-badge i { font-size: 11px; }

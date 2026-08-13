@@ -1,0 +1,56 @@
+/* pricing-premium.css — requiere variables.css del sitio. Prefijo pp-. */
+
+.pp-card {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-lg, 16px);
+  padding: 22px;
+  text-align: center;
+}
+.pp-kicker {
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--gold, #D4A94F);
+  margin-bottom: 10px;
+}
+.pp-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.pp-amount {
+  font-family: var(--font-data, monospace);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--gold-bright, #E8C878);
+}
+.pp-period { font-size: 12px; color: var(--text-muted, #6E7688); }
+
+.pp-cta {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  background: linear-gradient(135deg, var(--gold-bright, #E8C878), var(--gold, #D4A94F));
+  color: #14100A;
+  cursor: pointer;
+  transition: transform .2s ease;
+  margin-bottom: 10px;
+}
+.pp-cta:hover { transform: translateY(-2px); }
+
+.pp-wa {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted, #6E7688);
+  text-decoration: none;
+}
+.pp-wa:hover { color: var(--text-primary, #F3F0E8); }

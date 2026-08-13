@@ -1,0 +1,34 @@
+/* elite-stats.css — requiere variables.css del sitio. Prefijo es-.
+   Cifras reutilizadas, no nuevas. */
+
+.es-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.es-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.es-item strong {
+  font-family: var(--font-data, monospace);
+  font-size: 18px;
+  color: var(--gold-bright, #E8C878);
+}
+.es-item span {
+  font-size: 11px;
+  color: var(--text-muted, #6E7688);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.es-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--line, #232C3A);
+}
+@media (max-width: 500px) {
+  .es-sep { display: none; }
+}

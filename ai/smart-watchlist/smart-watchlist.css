@@ -1,0 +1,44 @@
+/* smart-watchlist.css — requiere variables.css del sitio. Prefijo sw2-. */
+
+.sw2-panel {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-lg, 16px);
+  padding: 18px;
+}
+.sw2-head { margin-bottom: 14px; }
+.sw2-label {
+  display: block;
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted, #6E7688);
+}
+.sw2-hint {
+  font-size: 11px;
+  color: var(--text-faint, #454D5C);
+}
+.sw2-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sw2-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-data, monospace);
+  font-size: 12px;
+  color: var(--text-secondary, #B8BFC9);
+  background: var(--bg-primary, #0A0E14);
+  border: 1px solid var(--line-soft, #1A222E);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+.sw2-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--long, #22B57B);
+}

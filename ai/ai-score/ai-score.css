@@ -1,0 +1,75 @@
+/* ai-score.css — requiere variables.css del sitio. Prefijo asc-. */
+
+.asc-panel {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--gold-dim, #8A7133);
+  border-radius: var(--radius-lg, 16px);
+  padding: 22px;
+}
+.asc-head { margin-bottom: 16px; }
+.asc-label {
+  display: block;
+  font-family: var(--font-display, sans-serif);
+  font-size: 17px;
+  color: var(--text-primary, #F3F0E8);
+  margin-bottom: 4px;
+}
+.asc-tag {
+  font-size: 11px;
+  color: var(--gold, #D4A94F);
+}
+.asc-field { margin-bottom: 16px; }
+.asc-field label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted, #6E7688);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-bottom: 6px;
+  font-family: var(--font-data, monospace);
+}
+.asc-field input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-primary, #0A0E14);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-primary, #F3F0E8);
+  font-size: 13px;
+}
+.asc-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.asc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary, #B8BFC9);
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg-primary, #0A0E14);
+  border: 1px solid var(--line-soft, #1A222E);
+}
+.asc-item input { margin-top: 2px; accent-color: var(--gold, #D4A94F); }
+.asc-result {
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft, #1A222E);
+}
+.asc-score {
+  font-family: var(--font-data, monospace);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--gold-bright, #E8C878);
+}
+.asc-result-label {
+  font-size: 12px;
+  color: var(--text-muted, #6E7688);
+  margin-top: 4px;
+}

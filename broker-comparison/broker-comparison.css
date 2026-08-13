@@ -1,0 +1,49 @@
+/* broker-comparison.css — requiere variables.css del sitio. Prefijo bc-. */
+
+.bc-table-wrap {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-lg, 16px);
+  padding: 20px;
+  overflow-x: auto;
+}
+.bc-intro {
+  font-size: 13px;
+  color: var(--text-secondary, #B8BFC9);
+  margin-bottom: 16px;
+}
+.bc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 480px;
+}
+.bc-table th {
+  text-align: left;
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--gold, #D4A94F);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line, #232C3A);
+}
+.bc-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line-soft, #1A222E);
+  color: var(--text-secondary, #B8BFC9);
+}
+.bc-table td[data-editable] {
+  color: var(--text-faint, #454D5C);
+  cursor: text;
+}
+.bc-table td[data-editable]:focus {
+  outline: 1px solid var(--gold-dim, #8A7133);
+  color: var(--text-primary, #F3F0E8);
+}
+.bc-note {
+  margin-top: 14px;
+  font-size: 10px;
+  color: var(--text-faint, #454D5C);
+  line-height: 1.5;
+}

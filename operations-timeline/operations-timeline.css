@@ -1,0 +1,52 @@
+/* operations-timeline.css — requiere variables.css y Font Awesome. Prefijo ot-. */
+
+.ot-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.ot-node {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-md, 10px);
+  padding: 16px 14px;
+  position: relative;
+}
+.ot-node:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 24px;
+  right: -12px;
+  width: 12px;
+  height: 1px;
+  background: var(--line, #232C3A);
+  display: none;
+}
+.ot-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: rgba(212,169,79,.1);
+  color: var(--gold, #D4A94F);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.ot-node h4 {
+  font-family: var(--font-display, sans-serif);
+  font-size: 13px;
+  color: var(--text-primary, #F3F0E8);
+  margin-bottom: 4px;
+}
+.ot-node p {
+  font-size: 11px;
+  color: var(--text-muted, #6E7688);
+}
+
+@media (min-width: 900px) {
+  .ot-node:not(:last-child)::after { display: block; }
+}
+@media (max-width: 700px) {
+  .ot-timeline { grid-template-columns: 1fr 1fr; }
+}

@@ -1,0 +1,59 @@
+/* market-sentiment.css — requiere variables.css del sitio. Prefijo mis-. */
+
+.mis-panel {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-lg, 16px);
+  padding: 18px;
+}
+.mis-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.mis-label {
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted, #6E7688);
+}
+.mis-tag {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text-faint, #454D5C);
+  border: 1px solid var(--line-soft, #1A222E);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.mis-gauge {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--short,#E24C5B), var(--line,#232C3A) 50%, var(--long,#22B57B));
+  margin-bottom: 10px;
+}
+.mis-gauge-marker {
+  position: absolute;
+  top: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--gold-bright, #E8C878);
+  border: 2px solid var(--bg-elevated, #151C27);
+  left: 50%;
+  transform: translateX(-50%);
+  transition: left .6s ease;
+}
+.mis-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-faint, #454D5C);
+  text-transform: uppercase;
+}
+.mis-labels #misStateLabel {
+  color: var(--gold, #D4A94F);
+  font-weight: 700;
+}

@@ -1,0 +1,31 @@
+<!-- ai-score / Trade Checklist Score — herramienta educativa donde el
+     ALUMNO evalua SU PROPIA idea de operacion contra 7 criterios de
+     disciplina. NO es una IA generando una recomendacion de compra/venta,
+     NO hay veredicto BUY/SELL, NO hay simbolo especifico recomendado.
+     El "score" refleja cuantos criterios de SU checklist cumplio, nada mas. -->
+<div class="asc-panel">
+  <div class="asc-head">
+    <span class="asc-label">Trade Checklist Score</span>
+    <span class="asc-tag">Tu autoevaluación, no una recomendación de IA</span>
+  </div>
+
+  <div class="asc-field">
+    <label for="ascPair">¿Qué operación estás evaluando? (opcional, solo para tu referencia)</label>
+    <input type="text" id="ascPair" placeholder="Ej: mi entrada en EUR/USD de hoy">
+  </div>
+
+  <div class="asc-checklist" id="ascChecklist">
+    <label class="asc-item"><input type="checkbox" data-crit="trend"><span>Trend Alignment — la tendencia mayor respalda mi idea</span></label>
+    <label class="asc-item"><input type="checkbox" data-crit="liquidity"><span>Liquidity — hay liquidez suficiente en la zona</span></label>
+    <label class="asc-item"><input type="checkbox" data-crit="rr"><span>Risk/Reward — mi ratio es al menos 1:2</span></label>
+    <label class="asc-item"><input type="checkbox" data-crit="session"><span>Session — estoy operando en la sesión adecuada para este par</span></label>
+    <label class="asc-item"><input type="checkbox" data-crit="news"><span>News Filter — revisé si hay noticias de alto impacto</span></label>
+    <label class="asc-item"><input type="checkbox" data-crit="psychology"><span>Psychology — no estoy operando por impulso o para recuperar pérdidas</span></label>
+    <label class="asc-item"><input type="checkbox" data-crit="execution"><span>Execution — mi stop loss y take profit ya están definidos</span></label>
+  </div>
+
+  <div class="asc-result">
+    <div class="asc-score" id="ascScore">0/7</div>
+    <div class="asc-result-label" id="ascResultLabel">Marca los criterios que cumples</div>
+  </div>
+</div>

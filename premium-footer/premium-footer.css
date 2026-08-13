@@ -1,0 +1,23 @@
+/* premium-footer.css — requiere variables.css del sitio. Prefijo pf-. */
+
+.pf-footer {
+  border-top: 1px solid var(--line-soft, #1A222E);
+  padding: 24px 20px 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.pf-risk {
+  font-size: 10px;
+  color: var(--text-faint, #454D5C);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.pf-bottom {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint, #454D5C);
+}

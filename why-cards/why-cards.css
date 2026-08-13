@@ -1,0 +1,46 @@
+/* why-cards.css — requiere variables.css y Font Awesome. Prefijo wc-. */
+
+.wc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.wc-card {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-lg, 16px);
+  padding: 20px 16px;
+  text-align: center;
+  transition: transform .25s ease, border-color .25s ease;
+}
+.wc-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--gold-dim, #8A7133);
+}
+.wc-icon {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  color: var(--gold, #D4A94F);
+  background: linear-gradient(160deg, rgba(212,169,79,.18), rgba(34,181,123,.06));
+  border: 1px solid var(--gold-dim, #8A7133);
+  box-shadow: 0 6px 16px -8px rgba(212,169,79,.5);
+}
+.wc-card h4 {
+  font-family: var(--font-display, sans-serif);
+  font-size: 13px;
+  color: var(--text-primary, #F3F0E8);
+  margin-bottom: 4px;
+}
+.wc-card p {
+  font-size: 11px;
+  color: var(--text-muted, #6E7688);
+}
+
+@media (max-width: 800px) {
+  .wc-grid { grid-template-columns: repeat(2, 1fr); }
+}

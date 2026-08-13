@@ -1,0 +1,41 @@
+/* countdown.css — requiere variables.css del sitio. Prefijo cd-. */
+
+.cd-panel {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--gold-dim, #8A7133);
+  border-radius: var(--radius-lg, 16px);
+  padding: 16px 18px;
+  text-align: center;
+}
+.cd-label {
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted, #6E7688);
+  margin-bottom: 10px;
+}
+.cd-units {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+.cd-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 42px;
+}
+.cd-num {
+  font-family: var(--font-data, monospace);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold-bright, #E8C878);
+}
+.cd-sub {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-faint, #454D5C);
+  margin-top: 2px;
+}

@@ -1,0 +1,48 @@
+/* ============ RESPONSIVE ============ */
+
+/* El ledger-rail (columna de tickers a la izquierda, 168px de ancho) solo
+   cabe cuando sobra ese margen libre a cada lado del contenedor de
+   1240px — eso empieza recién cerca de los 1600px de ancho de pantalla.
+   Por debajo, el contenido ocupa ese espacio y el rail terminaba
+   tapando el texto. */
+@media (max-width: 1600px) {
+  .ledger-rail { display: none; }
+}
+
+@media (max-width: 1080px) {
+  :root {
+    --fs-4xl: 3.6rem;
+    --fs-3xl: 2.9rem;
+    --sp-8: 6rem;
+    --sp-7: 4.5rem;
+  }
+  .hero { grid-template-columns: 1fr; gap: var(--sp-6); }
+  .hero-right { max-width: 460px; }
+  nav { display: none; }
+}
+
+@media (max-width: 860px) {
+  .pillars { grid-template-columns: 1fr; }
+  .courses-grid { grid-template-columns: 1fr; }
+  .mentors { grid-template-columns: 1fr; }
+  .calc-grid { grid-template-columns: 1fr; }
+  .stats { flex-wrap: wrap; gap: var(--sp-4); }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --fs-4xl: 2.6rem;
+    --fs-3xl: 2.1rem;
+    --fs-2xl: 1.9rem;
+    --sp-7: 3.5rem;
+    --sp-6: 2.75rem;
+  }
+  header { padding: var(--sp-3) var(--sp-4); }
+  .buttons .btn-outline { display: none; }
+  .hero { padding: var(--sp-6) var(--sp-4) var(--sp-5); }
+  .markets { overflow-x: auto; }
+  .section { padding: var(--sp-6) var(--sp-4); }
+  .footer-grid { grid-template-columns: 1fr; }
+  .badge span.long-form { display: none; }
+}

@@ -1,0 +1,43 @@
+/* final-cta.css — Prefijo fc2- (fc- ya esta tomado por floating-cta). */
+
+.fc2-panel {
+  padding: 48px 32px;
+  border-radius: var(--radius-lg, 16px);
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 0%, rgba(212,169,79,.14), transparent 70%), var(--bg-elevated, #151C27);
+  border: 1px solid var(--gold-dim, #8A7133);
+}
+.fc2-panel h2 {
+  font-family: var(--font-display, sans-serif);
+  font-size: 26px;
+  color: var(--text-primary, #F3F0E8);
+  margin-bottom: 12px;
+}
+.fc2-panel p {
+  color: var(--text-secondary, #B8BFC9);
+  max-width: 460px;
+  margin: 0 auto 22px;
+}
+.fc2-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.fc2-primary, .fc2-outline {
+  font-weight: 600;
+  font-size: 14px;
+  padding: 13px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform .2s ease;
+}
+.fc2-primary {
+  background: linear-gradient(135deg, var(--gold-bright, #E8C878), var(--gold, #D4A94F));
+  color: #14100A;
+}
+.fc2-outline {
+  border: 1px solid var(--line, #232C3A);
+  color: var(--text-primary, #F3F0E8);
+}
+.fc2-primary:hover, .fc2-outline:hover { transform: translateY(-2px); }

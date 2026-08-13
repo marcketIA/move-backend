@@ -1,0 +1,190 @@
+/* ============================================================
+   premium-polish.css — SOLO ADICIONES DE DISEÑO
+   No modifica lógica, no modifica el backend, no modifica los
+   archivos ya verificados (auth.js, gatekeeper.js, quiz.js,
+   calculator.js, tracking.js, mentorAI.js, server/).
+   Se importa DESPUÉS de global.css para poder refinar el look
+   sin tocar una sola línea de lo que ya funciona.
+   ============================================================ */
+
+/* ---- 1. Glassmorphismo estilo Apple/Stripe (Alejandro Cardona y las
+   mejores academias del mundo usan este tipo de profundidad en vidrio) ---- */
+.glass-panel {
+  background: rgba(11, 15, 25, 0.65);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.glass-panel-gold {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(212, 169, 79, 0.18);
+}
+
+/* Refina el glass-card del hero con más profundidad, sin tocar su HTML */
+.glass-card {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* ---- 2. Ticker de mercado con scroll infinito real ----
+   El keyframe tickerScroll ya existía en animations.css sin usarse;
+   aquí es donde finalmente cobra vida — la cinta de precios ahora
+   se desliza sola, como en las terminales de trading reales. */
+.markets {
+  white-space: nowrap;
+  width: max-content;
+  animation: tickerScroll 32s linear infinite;
+}
+.markets:hover {
+  animation-play-state: paused;
+}
+.markets div {
+  flex-shrink: 0;
+}
+
+/* ---- 3. Brillo interno en el CTA principal (micro-detalle premium) ---- */
+.btn-glow {
+  box-shadow: 0 0 35px rgba(212, 169, 79, 0.22);
+}
+.btn-glow:hover {
+  box-shadow: 0 0 55px rgba(212, 169, 79, 0.4);
+}
+
+/* ---- 4. Panel de precio — mismo patrón visual de las academias top:
+   precio grande + CTA dorado + salida de WhatsApp de respaldo debajo.
+   Los precios y los enlaces NO cambian, solo el contenedor. ---- */
+.price-panel {
+  padding: var(--sp-5);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.price-panel .wa-fallback {
+  font-size: var(--fs-2xs);
+  color: var(--text-muted);
+  transition: color .2s;
+}
+.price-panel .wa-fallback:hover {
+  color: var(--text-primary);
+}
+
+/* ---- 5. Placeholder de avatar con inicial (fallback defensivo) ----
+   Para cuando agreguen fotos reales de Kimy, Andy o alumnos: si una
+   imagen no carga, se reemplaza por una inicial con el mismo estilo
+   dorado del resto del sitio — nunca un ícono roto. */
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated-2);
+  color: var(--gold);
+  font-family: var(--font-data);
+  font-weight: 700;
+}
+
+/* ---- 6. Fondo mejorado (mismo contenedor #background-animation, sin
+   reemplazar el sistema existente) — grid con movimiento sutil y más
+   profundidad, estilo terminal financiera premium. ---- */
+#background-animation::before {
+  animation: bgGridDrift 70s linear infinite;
+}
+@keyframes bgGridDrift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-64px, -64px); }
+}
+#background-animation::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 500px 400px at 85% 85%, rgba(34,181,123,0.06), transparent 65%);
+}
+@media (prefers-reduced-motion: reduce) {
+  #background-animation::before { animation: none; }
+}
+
+/* ---- 6. Foto real de mentor + cita + chips de enfoque ----
+   Se activa solo en la tarjeta que tiene mentor-avatar-photo (Kimy por
+   ahora); el resto del layout de .mentor-card no se toca. */
+.mentor-avatar-photo {
+  overflow: hidden;
+}
+.mentor-avatar-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.mentor-card-photo {
+  border-color: var(--gold-dim);
+}
+
+.mentor-quote {
+  margin: 8px 0 10px;
+  padding-left: 12px;
+  border-left: 2px solid var(--gold-dim);
+  font-size: var(--fs-sm);
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.mentor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: var(--sp-3);
+}
+.mentor-chips span {
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(212, 169, 79, 0.08);
+  border: 1px solid var(--gold-dim);
+  border-radius: 999px;
+  padding: 5px 10px;
+}
+
+/* ---- 7. Retroalimentación de validación de formularios ----
+   Prefijo vfd-. Usado en el modal de registro (email, fuerza de
+   contraseña, coincidencia de confirmación). */
+.vfd-hint {
+  font-size: 11px;
+  margin: 6px 0 0;
+}
+.vfd-hint.ok { color: var(--long, #22B57B); }
+.vfd-hint.bad { color: var(--short, #E24C5B); }
+
+.vfd-strength {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.vfd-strength-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line, #232C3A);
+  overflow: hidden;
+}
+.vfd-strength-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width .25s ease, background .25s ease;
+}
+.vfd-strength span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-faint, #454D5C);
+  min-width: 52px;
+  text-align: right;
+}

@@ -1,0 +1,24 @@
+/* floating-cta.css — requiere Font Awesome. Prefijo fc-. */
+
+.fc-bubble {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #22B57B;
+  color: #0A0E14;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(34, 181, 123, 0.4);
+  z-index: 60;
+  transition: transform .2s ease;
+}
+.fc-bubble:hover { transform: scale(1.06); }
+
+@media (max-width: 600px) {
+  .fc-bubble { width: 50px; height: 50px; font-size: 22px; bottom: 16px; right: 16px; }
+}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expedientes | Move IA Market</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; background:#05070B; color:#F3F0E8; font-family:'Inter',sans-serif; padding:28px 20px 80px; }
+  .wrap { max-width:760px; margin:0 auto; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-size:20px; margin:0 0 2px; }
+  .warn { font-size:11.5px; color:#D4A94F; margin:0 0 24px; }
+  .row { display:flex; gap:10px; margin-bottom:20px; }
+  input { flex:1; background:#0D1218; border:1px solid #232C3A; color:#F3F0E8; border-radius:9px; padding:11px 14px; font-size:14px; font-family:inherit; }
+  button { border:none; border-radius:9px; padding:11px 18px; font-size:13.5px; font-weight:700; cursor:pointer; background:linear-gradient(135deg,#E8C878,#D4A94F); color:#14100A; }
+  .card { background:#151C27; border:1px solid #232C3A; border-radius:12px; padding:16px; margin-bottom:10px; cursor:pointer; }
+  .card:hover { border-color:#D4A94F; }
+  .card .top { display:flex; justify-content:space-between; font-size:14px; font-weight:600; }
+  .card .sub { font-size:12px; color:#8A93A6; margin-top:4px; }
+  .badge { font-size:10.5px; padding:3px 9px; border-radius:20px; font-weight:700; }
+  .b-active { background:rgba(34,181,123,.15); color:#22B57B; }
+  .b-refunded, .b-disputed { background:rgba(226,76,91,.15); color:#E24C5B; }
+  .b-pending { background:rgba(212,169,79,.15); color:#D4A94F; }
+  pre { background:#0D1218; border:1px solid #232C3A; border-radius:10px; padding:18px; font-size:12.5px; line-height:1.6; white-space:pre-wrap; color:#DDE3EA; max-height:70vh; overflow-y:auto; }
+  .back { font-size:13px; color:#8A93A6; cursor:pointer; margin-bottom:14px; display:inline-block; }
+  .empty { font-size:13px; color:#6E7688; }
+  @media print { input, .row, .back, button { display:none; } body { background:#fff; color:#000; } pre { border:none; color:#000; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🔒 Expedientes de compra</h1>
+    <p class="warn">DATOS ADMINISTRATIVOS SENSIBLES — acceso restringido</p>
+
+    <div id="loginView">
+      <div class="row">
+        <input type="password" id="adminKey" placeholder="Clave de administrador (ADMIN_SECRET)">
+        <button id="saveKeyBtn">Entrar</button>
+      </div>
+    </div>
+
+    <div id="searchView" style="display:none;">
+      <div class="row">
+        <input type="email" id="searchEmail" placeholder="Buscar por correo del cliente">
+        <button id="searchBtn">Buscar</button>
+      </div>
+      <div id="resultsList"></div>
+    </div>
+
+    <div id="detailView" style="display:none;">
+      <span class="back" id="backBtn">← Volver a la búsqueda</span>
+      <div class="row">
+        <button id="printBtn">Imprimir / Guardar como PDF</button>
+      </div>
+      <pre id="reportText">Cargando…</pre>
+    </div>
+  </div>
+
+  <script type="module">
+    var API_BASE_URL = import.meta.env.VITE_API_URL || '';
+    var adminKey = ''; // Solo en memoria — nunca se guarda en el navegador. Se pide de nuevo si recargas la página.
+
+    function show(view) {
+      document.getElementById('loginView').style.display = view === 'login' ? '' : 'none';
+      document.getElementById('searchView').style.display = view === 'search' ? '' : 'none';
+      document.getElementById('detailView').style.display = view === 'detail' ? '' : 'none';
+    }
+
+    show('login');
+
+    document.getElementById('saveKeyBtn').addEventListener('click', function () {
+      adminKey = document.getElementById('adminKey').value.trim();
+      document.getElementById('adminKey').value = '';
+      show('search');
+    });
+
+    function badgeClass(status) {
+      if (status === 'ACTIVE') return 'b-active';
+      if (status === 'REFUNDED' || status === 'DISPUTED') return 'b-' + status.toLowerCase();
+      return 'b-pending';
+    }
+
+    async function search() {
+      var email = document.getElementById('searchEmail').value.trim();
+      var list = document.getElementById('resultsList');
+      list.innerHTML = 'Buscando…';
+      try {
+        var res = await fetch(API_BASE_URL + '/api/admin/compliance/search?email=' + encodeURIComponent(email), {
+          headers: { 'x-admin-key': adminKey }
+        });
+        if (res.status === 401) { adminKey = ''; show('login'); return; }
+        var data = await res.json();
+        if (!data.purchases || data.purchases.length === 0) {
+          list.innerHTML = '<p class="empty">Sin resultados para ese correo.</p>';
+          return;
+        }
+        list.innerHTML = '';
+        data.purchases.forEach(function (p) {
+          var el = document.createElement('div');
+          el.className = 'card';
+          var date = p.purchasedAt ? new Date(p.purchasedAt * 1000).toLocaleDateString('es-ES') : 'sin confirmar';
+          el.innerHTML = '<div class="top"><span>' + p.productName + '</span><span class="badge ' + badgeClass(p.status) + '">' + p.status + '</span></div>' +
+            '<div class="sub">' + p.email + ' · $' + (p.amountCents / 100).toFixed(2) + ' · ' + date + '</div>';
+          el.addEventListener('click', function () { openDetail(p.id); });
+          list.appendChild(el);
+        });
+      } catch (err) {
+        list.innerHTML = '<p class="empty">No se pudo conectar con el servidor.</p>';
+      }
+    }
+    document.getElementById('searchBtn').addEventListener('click', search);
+    document.getElementById('searchEmail').addEventListener('keydown', function (e) { if (e.key === 'Enter') search(); });
+
+    async function openDetail(purchaseId) {
+      show('detail');
+      var pre = document.getElementById('reportText');
+      pre.textContent = 'Cargando…';
+      try {
+        var res = await fetch(API_BASE_URL + '/api/admin/compliance/purchase/' + purchaseId + '/report', {
+          headers: { 'x-admin-key': adminKey }
+        });
+        pre.textContent = await res.text();
+      } catch (err) {
+        pre.textContent = 'No se pudo cargar el expediente.';
+      }
+    }
+
+    document.getElementById('backBtn').addEventListener('click', function () { show('search'); });
+    document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+/* faq-premium.css — requiere variables.css y Font Awesome. Prefijo fp-. */
+
+.fp-item {
+  border-bottom: 1px solid var(--line-soft, #1A222E);
+}
+.fp-question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  cursor: pointer;
+  font-family: var(--font-display, sans-serif);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #F3F0E8);
+}
+.fp-question i {
+  color: var(--gold, #D4A94F);
+  transition: transform .25s ease;
+}
+.fp-item.open .fp-question i { transform: rotate(45deg); }
+.fp-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s ease, padding .35s ease;
+  color: var(--text-secondary, #B8BFC9);
+  font-size: 13px;
+}
+.fp-item.open .fp-answer { max-height: 200px; padding-bottom: 16px; }

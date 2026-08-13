@@ -1,0 +1,38 @@
+/* market-ticker.css — requiere variables.css del sitio. Prefijo mkt-. */
+
+.mkt-ticker-wrap {
+  overflow: hidden;
+  border-top: 1px solid var(--line-soft, #1A222E);
+  border-bottom: 1px solid var(--line-soft, #1A222E);
+  background: var(--bg-secondary, #0F141C);
+  padding: 12px 0;
+}
+.mkt-ticker {
+  display: flex;
+  gap: 48px;
+  white-space: nowrap;
+  width: max-content;
+  animation: mktScroll 28s linear infinite;
+  padding: 0 24px;
+}
+.mkt-ticker:hover { animation-play-state: paused; }
+.mkt-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-data, monospace);
+  font-size: 13px;
+  color: var(--text-muted, #6E7688);
+  flex-shrink: 0;
+}
+.mkt-item strong { color: var(--text-primary, #F3F0E8); }
+.mkt-item .up { color: var(--long, #22B57B); }
+.mkt-item .down { color: var(--short, #E24C5B); }
+
+@keyframes mktScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mkt-ticker { animation: none; }
+}

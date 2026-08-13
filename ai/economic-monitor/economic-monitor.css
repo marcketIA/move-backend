@@ -1,0 +1,47 @@
+/* economic-monitor.css — requiere variables.css del sitio. Prefijo em-. */
+
+.em-panel {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-lg, 16px);
+  padding: 18px;
+}
+.em-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted, #6E7688);
+  margin-bottom: 14px;
+}
+.em-tag {
+  font-size: 9px;
+  color: var(--text-faint, #454D5C);
+  border: 1px solid var(--line-soft, #1A222E);
+  border-radius: 999px;
+  padding: 2px 8px;
+  text-transform: none;
+}
+.em-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line-soft, #1A222E);
+  font-size: 12px;
+}
+.em-row:first-child { border-top: none; }
+.em-impact {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.em-impact.high { background: var(--short, #E24C5B); }
+.em-impact.med { background: var(--amber, #E8934A); }
+.em-impact.low { background: var(--text-faint, #454D5C); }
+.em-row .name { color: var(--text-secondary, #B8BFC9); flex: 1; }
+.em-row .time { font-family: var(--font-data, monospace); color: var(--text-faint, #454D5C); font-size: 11px; }

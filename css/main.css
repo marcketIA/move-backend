@@ -1,0 +1,37 @@
+/* El sistema de diseño de Move IA Market vive en CSS normal, no en
+   utilidades de Tailwind — Tailwind queda disponible para prototipar rápido
+   en páginas nuevas (dashboard, vistas de campaña) sin reescribir todo lo
+   que ya está diseñado y funcionando. */
+@import './global.css';
+@import './premium-polish.css';
+@import '../components/floating-cta/floating-cta.css';
+@import '../components/trading-sessions/trading-sessions.css';
+@import '../components/countdown/countdown.css';
+@import '../components/trust-bar/trust-bar.css';
+@import '../components/founders-story/founders-story.css';
+@import '../components/operations-timeline/operations-timeline.css';
+@import '../components/course-roadmap/course-roadmap.css';
+@import '../components/pricing-comparison/pricing-comparison.css';
+@import '../components/premium-footer/premium-footer.css';
+@import '../components/final-cta/final-cta.css';
+@import '../components/economic-heatmap/economic-heatmap.css';
+@import '../components/mentor-preview/mentor-preview.css';
+@import '../components/ai/market-sentiment/market-sentiment.css';
+@import '../components/ai/smart-watchlist/smart-watchlist.css';
+@import '../components/ai/institutional-radar/institutional-radar.css';
+@import '../components/ai/ai-score/ai-score.css';
+@import '../components/ai/ai-command-center/ai-command-center.css';
+@import '../components/why-cards/why-cards.css';
+@import '../components/top-ticker-bar/top-ticker-bar.css';
+@import '../components/security-ui/login-premium/login-premium.css';
+@import '../components/security-ui/loading-screen/loading-screen.css';
+@import '../components/security-ui/access-denied/access-denied.css';
+@import '../components/security-ui/license-status/license-status.css';
+@import '../components/security-ui/session-status/session-status.css';
+@import '../components/security-ui/secure-video-header/secure-video-header.css';
+@import '../components/security-ui/forgot-password/forgot-password.css';
+@import '../components/security-ui/device-remember/device-remember.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

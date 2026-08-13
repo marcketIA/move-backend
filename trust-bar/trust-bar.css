@@ -1,0 +1,20 @@
+/* trust-bar.css — requiere Font Awesome y variables.css del sitio. Prefijo tb-. */
+
+.tb-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 28px;
+  padding: 16px 0;
+}
+.tb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted, #6E7688);
+}
+.tb-item i {
+  color: var(--gold, #D4A94F);
+  font-size: 13px;
+}

@@ -1,0 +1,72 @@
+<!-- ai-command-center — contenedor de 4 paneles: Market Sentiment,
+     Smart Watchlist, Trade Checklist Score, Institutional Radar.
+     Marca MOVE IA MARKET (sub-marca de herramientas dentro de Move Stock
+     Academy). Todo visual/educativo, no toca backend.
+     Cada panel es un componente independiente (mismo html/css/js que en
+     su propia carpeta) — aqui van compuestos juntos dentro de la grilla. -->
+<div class="acc-wrap">
+  <div class="acc-header">
+    <div class="acc-brand">
+      <img src="/src/assets/brand/move-ia-market-logo.jpg" alt="Move IA Market" class="acc-logo">
+      <div>
+        <div class="acc-title">MOVE <span>IA</span> MARKET</div>
+        <div class="acc-subtitle">Command Center</div>
+      </div>
+    </div>
+    <span class="acc-live"><span class="acc-live-dot"></span> En vivo</span>
+  </div>
+
+  <div class="acc-grid">
+    <div class="acc-cell">
+      <!-- market-sentiment -->
+      <div class="mis-panel">
+        <div class="mis-head"><span class="mis-label">Market Sentiment</span><span class="mis-tag">Ilustrativo</span></div>
+        <div class="mis-gauge"><div class="mis-gauge-fill" id="misGaugeFill"></div><div class="mis-gauge-marker" id="misGaugeMarker"></div></div>
+        <div class="mis-labels"><span>Bajista</span><span id="misStateLabel">Neutral</span><span>Alcista</span></div>
+      </div>
+    </div>
+
+    <div class="acc-cell">
+      <!-- smart-watchlist -->
+      <div class="sw2-panel">
+        <div class="sw2-head"><span class="sw2-label">Today's Focus</span><span class="sw2-hint">Símbolos en agenda esta semana</span></div>
+        <div class="sw2-list" id="sw2List"></div>
+      </div>
+    </div>
+
+    <div class="acc-cell acc-cell-wide">
+      <!-- ai-score / Trade Checklist Score -->
+      <div class="asc-panel">
+        <div class="asc-head">
+          <span class="asc-label">Trade Checklist Score</span>
+          <span class="asc-tag">Tu autoevaluación, no una recomendación de IA</span>
+        </div>
+        <div class="asc-field">
+          <label for="ascPair">¿Qué operación estás evaluando? (opcional, solo para tu referencia)</label>
+          <input type="text" id="ascPair" placeholder="Ej: mi entrada en EUR/USD de hoy">
+        </div>
+        <div class="asc-checklist" id="ascChecklist">
+          <label class="asc-item"><input type="checkbox" data-crit="trend"><span>Trend Alignment — la tendencia mayor respalda mi idea</span></label>
+          <label class="asc-item"><input type="checkbox" data-crit="liquidity"><span>Liquidity — hay liquidez suficiente en la zona</span></label>
+          <label class="asc-item"><input type="checkbox" data-crit="rr"><span>Risk/Reward — mi ratio es al menos 1:2</span></label>
+          <label class="asc-item"><input type="checkbox" data-crit="session"><span>Session — estoy operando en la sesión adecuada para este par</span></label>
+          <label class="asc-item"><input type="checkbox" data-crit="news"><span>News Filter — revisé si hay noticias de alto impacto</span></label>
+          <label class="asc-item"><input type="checkbox" data-crit="psychology"><span>Psychology — no estoy operando por impulso o para recuperar pérdidas</span></label>
+          <label class="asc-item"><input type="checkbox" data-crit="execution"><span>Execution — mi stop loss y take profit ya están definidos</span></label>
+        </div>
+        <div class="asc-result">
+          <div class="asc-score" id="ascScore">0/7</div>
+          <div class="asc-result-label" id="ascResultLabel">Marca los criterios que cumples</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acc-cell">
+      <!-- institutional-radar -->
+      <div class="ir-panel">
+        <div class="ir-head">Liquidity Radar <span class="ir-tag">Ilustrativo</span></div>
+        <div class="ir-bars" id="irBars"></div>
+      </div>
+    </div>
+  </div>
+</div>

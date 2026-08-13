@@ -1,0 +1,39 @@
+/* market-overview.css — requiere variables.css del sitio. Prefijo mo-. */
+
+.mo-panel {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.mo-cat {
+  background: var(--bg-elevated, #151C27);
+  border: 1px solid var(--line, #232C3A);
+  border-radius: var(--radius-md, 10px);
+  padding: 14px;
+}
+.mo-cat h5 {
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted, #6E7688);
+  margin-bottom: 10px;
+}
+.mo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-data, monospace);
+  font-size: 12px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line-soft, #1A222E);
+}
+.mo-row:first-of-type { border-top: none; }
+.mo-row .sym { color: var(--text-secondary, #B8BFC9); }
+.mo-row .val { color: var(--text-primary, #F3F0E8); }
+.mo-row .val.up { color: var(--long, #22B57B); }
+.mo-row .val.down { color: var(--short, #E24C5B); }
+
+@media (max-width: 700px) {
+  .mo-panel { grid-template-columns: repeat(2, 1fr); }
+}
