@@ -18,8 +18,6 @@ import { buildSignedVideoUrl } from '../utils/signedUrl.js';
 
 const router = Router();
 
-// Más estricto que el login normal (8 en 15 min) porque esto protege el
-// producto de mayor valor — 5 intentos en 15 minutos.
 const premiumVerifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -28,8 +26,6 @@ const premiumVerifyLimiter = rateLimit({
   message: { error: 'Demasiados intentos de verificación Elite. Espera unos minutos e intenta de nuevo.' }
 });
 
-// Máximo 2 dispositivos para la zona Elite (ej. 1 computadora + 1 celular),
-// más estricto que el curso base a propósito, por el valor del producto.
 const MAX_ELITE_DEVICES = 2;
 
 function readJsonSetting(name) {
@@ -39,6 +35,13 @@ function readJsonSetting(name) {
     return null;
   }
 }
+
+router.get('/premium/elite-window', (req, res) => {
+  const unlocksAt = parseInt(process.env.ELITE_OFFER_UNLOCKS_AT_UNIX, 10);
+  const now = Math.floor(Date.now() / 1000);
+  const open = !Number.isFinite(unlocksAt) ? false : now >= unlocksAt;
+  res.json({ open, unlocksAt: Number.isFinite(unlocksAt) ? unlocksAt : null });
+});
 
 router.post('/premium/verify', premiumVerifyLimiter, async (req, res) => {
   try {
@@ -63,10 +66,6 @@ router.post('/premium/verify', premiumVerifyLimiter, async (req, res) => {
       return res.status(403).json({ error: 'Esta cuenta no tiene la Plantilla Elite activa.' });
     }
 
-    // Control de dispositivos: si este dispositivo ya es conocido, lo
-    // actualiza sin contar como uno nuevo. Si es distinto y ya hay 2,
-    // se bloquea — mismo criterio que el curso base, pero con límite
-    // numérico explícito porque aquí sí importa mucho más.
     const label = (deviceLabel || req.headers['user-agent'] || 'dispositivo').slice(0, 200);
     const currentCount = await countDevicesByUsername(cleanUsername);
     const knownDevices = await listDevicesByUsername(cleanUsername);
@@ -83,14 +82,11 @@ router.post('/premium/verify', premiumVerifyLimiter, async (req, res) => {
     const token = jwt.sign(
       { username: cleanUsername, type: 'premium' },
       process.env.SESSION_SECRET,
-      { expiresIn: '2h' } // sesión corta a propósito — es la zona más valiosa.
+      { expiresIn: '2h' }
     );
 
     res.json({ token, expiresAt: activeElite.expiresAt });
 
-    // Evidencia: se registra DESPUÉS de responder, para no demorar el
-    // login por esto. Si falla, no afecta el acceso — solo se pierde
-    // ese registro puntual de actividad.
     findLatestPurchaseByEmail(cleanUsername, 'elite').then((purchase) => {
       if (purchase) {
         logComplianceEvent({
@@ -119,9 +115,6 @@ router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) =
   }
 
   try {
-    // Igual que en video.js: el JWT es solo la sesión, se vuelve a
-    // consultar la base de datos para que una expiración se aplique al
-    // siguiente intento de ver una clase, no solo al momento de verificar.
     const codes = await findAccessCodesByUsername(req.premium.username);
     const now = Math.floor(Date.now() / 1000);
     const activeElite = codes.find((c) => c.courseId === 'elite' && c.expiresAt > now);
@@ -151,10 +144,6 @@ router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) =
   }
 });
 
-// El link de Zoom es un salón fijo que se reutiliza cada día (no hace
-// falta crear una fila nueva en la base de datos cada mañana). Si algún
-// día lo quieres cambiar, solo se actualiza la variable de entorno en
-// Render, sin tocar código.
 router.get('/premium/live', requirePremiumSession, async (req, res) => {
   res.json({
     forex: {
@@ -168,8 +157,6 @@ router.get('/premium/live', requirePremiumSession, async (req, res) => {
   });
 });
 
-// Grabaciones de los últimos 14 días — cada una se sube manualmente a
-// Cloudflare Stream y se registra con POST /admin/elite-sessions.
 router.get('/premium/replays', requirePremiumSession, async (req, res) => {
   try {
     const fourteenDaysAgo = Math.floor(Date.now() / 1000) - 14 * 24 * 60 * 60;
@@ -181,7 +168,7 @@ router.get('/premium/replays', requirePremiumSession, async (req, res) => {
         const signed = buildSignedVideoUrl(r.recordingUid, ttl);
         return { id: r.id, courseType: r.courseType, sessionDate: r.sessionDate, ...signed };
       } catch {
-        return null; // Cloudflare Stream no configurado todavía — se omite en vez de romper la lista completa.
+        return null;
       }
     }).filter(Boolean);
 
@@ -192,12 +179,6 @@ router.get('/premium/replays', requirePremiumSession, async (req, res) => {
   }
 });
 
-// Solo lectura: para que el catálogo del curso base sepa si mostrar la
-// tarjeta Elite como "bloqueada" o "activa". Usa la sesión de cuenta
-// normal (la misma del curso base), NO abre la zona Elite — eso sigue
-// exigiendo la segunda verificación en /premium/verify, exactamente
-// igual que siempre. Esto solo consulta el estado real en la base de
-// datos, nunca decide nada por sí mismo.
 router.get('/premium/status', requireAccount, async (req, res) => {
   try {
     const codes = await findAccessCodesByUsername(req.account.username);
