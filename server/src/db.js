@@ -54,6 +54,19 @@ export async function findAccessCodeByStripeSession(stripeSessionId) {
   return result.rows[0] ? rowToAccessCode(result.rows[0]) : null;
 }
 
+// Revocación por reembolso/disputa (ver routes/webhook-refunds.js). No borra
+// el registro, solo lo vence de inmediato — toda la lógica de "¿tiene
+// acceso activo?" ya revisa expires_at > ahora, así que esto corta el
+// acceso al instante sin tocar ninguna otra parte del sistema.
+export async function revokeAccessByStripeSession(stripeSessionId) {
+  const now = Math.floor(Date.now() / 1000);
+  const result = await pool.query(
+    'UPDATE access_codes SET expires_at = $1 WHERE stripe_session_id = $2 RETURNING *',
+    [now, stripeSessionId]
+  );
+  return result.rows[0] ? rowToAccessCode(result.rows[0]) : null;
+}
+
 export async function allAccessCodes() {
   const result = await pool.query('SELECT * FROM access_codes ORDER BY purchased_at DESC');
   return result.rows.map(rowToAccessCode);
@@ -231,5 +244,164 @@ function rowToDevice(row) {
     userAgent: row.user_agent,
     firstSeen: Number(row.first_seen),
     lastSeen: Number(row.last_seen)
+  };
+}
+
+// ---- Expediente de evidencia (compras, consentimientos, actividad) ----
+
+export async function createCompliancePurchase(record) {
+  const now = Math.floor(Date.now() / 1000);
+  const result = await pool.query(
+    `INSERT INTO compliance_purchases
+       (id, email, username, product_code, product_name, amount_cents, currency,
+        status, purchase_ip, purchase_user_agent, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'PENDING',$8,$9,$10,$10) RETURNING *`,
+    [record.id, record.email, record.username || null, record.productCode, record.productName,
+      record.amountCents, record.currency || 'USD', record.purchaseIp || null,
+      record.purchaseUserAgent || null, now]
+  );
+  return rowToCompliancePurchase(result.rows[0]);
+}
+
+export async function saveComplianceConsent(record) {
+  const now = Math.floor(Date.now() / 1000);
+  await pool.query(
+    `INSERT INTO compliance_consents
+       (purchase_id, consent_type, terms_version, terms_title, terms_text,
+        terms_sha256, accepted, accepted_at, ip_address, user_agent)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+    [record.purchaseId, record.consentType, record.termsVersion, record.termsTitle,
+      record.termsText, record.termsSha256, record.accepted, now,
+      record.ipAddress || null, record.userAgent || null]
+  );
+}
+
+export async function attachStripeIdsToPurchase(purchaseId, { stripeCheckoutSessionId, stripePaymentIntentId }) {
+  const now = Math.floor(Date.now() / 1000);
+  await pool.query(
+    `UPDATE compliance_purchases
+     SET stripe_checkout_session_id = $1, stripe_payment_intent_id = $2, updated_at = $3
+     WHERE id = $4`,
+    [stripeCheckoutSessionId || null, stripePaymentIntentId || null, now, purchaseId]
+  );
+}
+
+export async function setCompliancePurchaseStatus(purchaseId, newStatus, reason) {
+  const now = Math.floor(Date.now() / 1000);
+  const current = await pool.query('SELECT status FROM compliance_purchases WHERE id = $1', [purchaseId]);
+  const oldStatus = current.rows[0]?.status || null;
+
+  await pool.query(
+    `UPDATE compliance_purchases SET status = $1, purchased_at = COALESCE(purchased_at, $2), updated_at = $2 WHERE id = $3`,
+    [newStatus, now, purchaseId]
+  );
+  await pool.query(
+    `INSERT INTO compliance_status_events (purchase_id, old_status, new_status, reason, occurred_at)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [purchaseId, oldStatus, newStatus, reason || null, now]
+  );
+}
+
+export async function findCompliancePurchaseByStripeSession(stripeCheckoutSessionId) {
+  const result = await pool.query(
+    'SELECT * FROM compliance_purchases WHERE stripe_checkout_session_id = $1',
+    [stripeCheckoutSessionId]
+  );
+  return result.rows[0] ? rowToCompliancePurchase(result.rows[0]) : null;
+}
+
+export async function findCompliancePurchaseByPaymentIntent(paymentIntentId) {
+  const result = await pool.query(
+    'SELECT * FROM compliance_purchases WHERE stripe_payment_intent_id = $1',
+    [paymentIntentId]
+  );
+  return result.rows[0] ? rowToCompliancePurchase(result.rows[0]) : null;
+}
+
+export async function findCompliancePurchaseById(purchaseId) {
+  const result = await pool.query('SELECT * FROM compliance_purchases WHERE id = $1', [purchaseId]);
+  return result.rows[0] ? rowToCompliancePurchase(result.rows[0]) : null;
+}
+
+export async function findLatestPurchaseByEmail(email, productCode) {
+  const result = await pool.query(
+    `SELECT * FROM compliance_purchases WHERE email = $1 AND product_code = $2
+     ORDER BY created_at DESC LIMIT 1`,
+    [email, productCode]
+  );
+  return result.rows[0] ? rowToCompliancePurchase(result.rows[0]) : null;
+}
+
+export async function searchCompliancePurchasesByEmail(email) {
+  const result = await pool.query(
+    `SELECT * FROM compliance_purchases WHERE email ILIKE $1 ORDER BY created_at DESC`,
+    [`%${email}%`]
+  );
+  return result.rows.map(rowToCompliancePurchase);
+}
+
+export async function logComplianceEvent(record) {
+  const now = Math.floor(Date.now() / 1000);
+  await pool.query(
+    `INSERT INTO compliance_access_events
+       (purchase_id, email, event_type, resource_type, resource_id, metadata, ip_address, user_agent, occurred_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    [record.purchaseId || null, record.email, record.eventType, record.resourceType || null,
+      record.resourceId || null, JSON.stringify(record.metadata || {}),
+      record.ipAddress || null, record.userAgent || null, now]
+  );
+}
+
+export async function getComplianceConsents(purchaseId) {
+  const result = await pool.query(
+    'SELECT * FROM compliance_consents WHERE purchase_id = $1 ORDER BY accepted_at ASC',
+    [purchaseId]
+  );
+  return result.rows.map(rowToComplianceConsent);
+}
+
+export async function getComplianceActivitySummary(purchaseId) {
+  const result = await pool.query(
+    `SELECT event_type, COUNT(*) AS count FROM compliance_access_events
+     WHERE purchase_id = $1 GROUP BY event_type`,
+    [purchaseId]
+  );
+  const summary = {};
+  result.rows.forEach((r) => { summary[r.event_type] = Number(r.count); });
+  return summary;
+}
+
+function rowToCompliancePurchase(row) {
+  return {
+    id: row.id,
+    email: row.email,
+    username: row.username,
+    productCode: row.product_code,
+    productName: row.product_name,
+    amountCents: row.amount_cents,
+    currency: row.currency,
+    stripeCheckoutSessionId: row.stripe_checkout_session_id,
+    stripePaymentIntentId: row.stripe_payment_intent_id,
+    status: row.status,
+    purchaseIp: row.purchase_ip,
+    purchaseUserAgent: row.purchase_user_agent,
+    purchasedAt: row.purchased_at ? Number(row.purchased_at) : null,
+    createdAt: Number(row.created_at),
+    updatedAt: Number(row.updated_at)
+  };
+}
+
+function rowToComplianceConsent(row) {
+  return {
+    id: row.id,
+    purchaseId: row.purchase_id,
+    consentType: row.consent_type,
+    termsVersion: row.terms_version,
+    termsTitle: row.terms_title,
+    termsSha256: row.terms_sha256,
+    accepted: row.accepted,
+    acceptedAt: Number(row.accepted_at),
+    ipAddress: row.ip_address,
+    userAgent: row.user_agent
   };
 }

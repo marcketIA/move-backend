@@ -9,7 +9,7 @@
 // por error ni a propósito.
 
 import { Router } from 'express';
-import { allAccessCodes, saveEliteSession } from '../db.js';
+import { allAccessCodes, saveEliteSession, findCompliancePurchaseById, getComplianceConsents, getComplianceActivitySummary, searchCompliancePurchasesByEmail } from '../db.js';
 
 const router = Router();
 
@@ -61,6 +61,108 @@ router.post('/admin/elite-sessions', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Error en /admin/elite-sessions:', err.message);
     res.status(500).json({ error: 'No se pudo guardar la sesión.' });
+  }
+});
+
+// ---- Expediente de evidencia (para ti, en caso de disputa) ----
+
+router.get('/admin/compliance/search', requireAdmin, async (req, res) => {
+  try {
+    const email = (req.query.email || '').trim();
+    if (!email) return res.status(400).json({ error: 'Falta el correo a buscar.' });
+    const purchases = await searchCompliancePurchasesByEmail(email);
+    res.json({ purchases });
+  } catch (err) {
+    console.error('Error en /admin/compliance/search:', err.message);
+    res.status(500).json({ error: 'No se pudo buscar.' });
+  }
+});
+
+async function buildEvidenceData(purchaseId) {
+  const purchase = await findCompliancePurchaseById(purchaseId);
+  if (!purchase) return null;
+  const consents = await getComplianceConsents(purchaseId);
+  const activity = await getComplianceActivitySummary(purchaseId);
+  return { purchase, consents, activity };
+}
+
+router.get('/admin/compliance/purchase/:purchaseId', requireAdmin, async (req, res) => {
+  try {
+    const data = await buildEvidenceData(req.params.purchaseId);
+    if (!data) return res.status(404).json({ error: 'No existe ese expediente.' });
+    res.json(data);
+  } catch (err) {
+    console.error('Error en /admin/compliance/purchase:', err.message);
+    res.status(500).json({ error: 'No se pudo cargar el expediente.' });
+  }
+});
+
+// El "1%" — el reporte ya redactado, listo para copiar y mandar a
+// Stripe/PayPal/el banco en una disputa, sin tener que armar nada a mano.
+router.get('/admin/compliance/purchase/:purchaseId/report', requireAdmin, async (req, res) => {
+  try {
+    const data = await buildEvidenceData(req.params.purchaseId);
+    if (!data) return res.status(404).json({ error: 'No existe ese expediente.' });
+
+    const { purchase, consents, activity } = data;
+    const fmt = (ts) => (ts ? new Date(ts * 1000).toISOString() : 'N/D');
+    const money = (cents, currency) => `${(cents / 100).toFixed(2)} ${currency}`;
+
+    let report = `MOVE IA MARKET — REPORTE DE EVIDENCIA DE COMPRA
+================================================
+
+Producto: ${purchase.productName}
+Monto: ${money(purchase.amountCents, purchase.currency)}
+Cliente (correo): ${purchase.email}
+Estado actual: ${purchase.status}
+
+Stripe Checkout Session: ${purchase.stripeCheckoutSessionId || 'N/D'}
+Stripe Payment Intent: ${purchase.stripePaymentIntentId || 'N/D'}
+
+Compra iniciada: ${fmt(purchase.createdAt)}
+Pago confirmado: ${fmt(purchase.purchasedAt)}
+IP de compra: ${purchase.purchaseIp || 'N/D'}
+Dispositivo/navegador: ${purchase.purchaseUserAgent || 'N/D'}
+
+------------------------------------------------
+CONSENTIMIENTOS ACEPTADOS ANTES DEL PAGO
+------------------------------------------------
+`;
+
+    consents.forEach((c) => {
+      report += `\n[${c.consentType}] "${c.termsTitle}"
+  Versión: ${c.termsVersion}
+  Aceptado: ${c.accepted ? 'SÍ' : 'NO'}
+  Fecha/hora: ${fmt(c.acceptedAt)}
+  IP: ${c.ipAddress || 'N/D'}
+  Hash SHA-256 del texto exacto aceptado: ${c.termsSha256}\n`;
+    });
+
+    report += `
+------------------------------------------------
+ACTIVIDAD REGISTRADA DESPUÉS DE LA COMPRA
+------------------------------------------------
+`;
+    if (Object.keys(activity).length === 0) {
+      report += `\n(Sin actividad registrada todavía.)\n`;
+    } else {
+      Object.entries(activity).forEach(([eventType, count]) => {
+        report += `${eventType}: ${count}\n`;
+      });
+    }
+
+    report += `
+------------------------------------------------
+Este documento fue generado automáticamente por el sistema de Move IA
+Market a partir de registros internos vinculados a la transacción de
+Stripe indicada arriba. Generado: ${new Date().toISOString()}
+------------------------------------------------
+`;
+
+    res.type('text/plain').send(report);
+  } catch (err) {
+    console.error('Error en /admin/compliance/report:', err.message);
+    res.status(500).json({ error: 'No se pudo generar el reporte.' });
   }
 });
 

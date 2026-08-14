@@ -11,7 +11,7 @@
 
 import { Router } from 'express';
 import Stripe from 'stripe';
-import { findAccessCodeByStripeSession, saveAccessCode } from '../db.js';
+import { findAccessCodeByStripeSession, saveAccessCode, setCompliancePurchaseStatus, logComplianceEvent } from '../db.js';
 import { generateAccessCode, accessDurationSeconds } from '../utils/accessCode.js';
 
 const router = Router();
@@ -65,6 +65,20 @@ router.post('/webhook-elite', async (req, res) => {
     });
 
     console.log(`✅ Pago Elite confirmado. Código: ${code} · cuenta: ${username} · expira en ${durationSeconds / 86400} días`);
+
+    // Expediente de evidencia — se activa DESPUÉS de dar el acceso real,
+    // nunca decide si el acceso se da o no (eso lo sigue haciendo lo de
+    // arriba, exactamente igual que siempre).
+    const purchaseId = session.metadata?.purchaseId;
+    if (purchaseId) {
+      try {
+        await setCompliancePurchaseStatus(purchaseId, 'ACTIVE', 'checkout.session.completed');
+        await logComplianceEvent({ purchaseId, email: username, eventType: 'PAYMENT_CONFIRMED' });
+        await logComplianceEvent({ purchaseId, email: username, eventType: 'ACCESS_GRANTED' });
+      } catch (err) {
+        console.error('No se pudo actualizar el expediente de evidencia:', err.message);
+      }
+    }
   }
 
   res.json({ received: true });

@@ -2,7 +2,8 @@ import crypto from 'crypto';
 
 const COURSE_ACCESS_DAYS = {
   forex: 21,
-  opciones: 21
+  opciones: 21,
+  elite: 21 // Plantillas + en vivo + grabaciones — mismo criterio de 21 días.
 };
 
 export function generateAccessCode(prefix) {

@@ -11,8 +11,9 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
-import { findUserByUsername, findAccessCodesByUsername, upsertDevice, countDevicesByUsername, listDevicesByUsername, listActiveEliteRecordings } from '../db.js';
+import { findUserByUsername, findAccessCodesByUsername, upsertDevice, countDevicesByUsername, listDevicesByUsername, listActiveEliteRecordings, findLatestPurchaseByEmail, logComplianceEvent } from '../db.js';
 import { requirePremiumSession } from '../middleware/requirePremiumSession.js';
+import { requireAccount } from '../middleware/requireAccount.js';
 import { buildSignedVideoUrl } from '../utils/signedUrl.js';
 
 const router = Router();
@@ -86,6 +87,18 @@ router.post('/premium/verify', premiumVerifyLimiter, async (req, res) => {
     );
 
     res.json({ token, expiresAt: activeElite.expiresAt });
+
+    // Evidencia: se registra DESPUÉS de responder, para no demorar el
+    // login por esto. Si falla, no afecta el acceso — solo se pierde
+    // ese registro puntual de actividad.
+    findLatestPurchaseByEmail(cleanUsername, 'elite').then((purchase) => {
+      if (purchase) {
+        logComplianceEvent({
+          purchaseId: purchase.id, email: cleanUsername, eventType: 'LOGIN_SUCCESS',
+          ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress, userAgent: req.headers['user-agent']
+        }).catch((e) => console.error('No se pudo registrar LOGIN_SUCCESS:', e.message));
+      }
+    }).catch(() => {});
   } catch (err) {
     console.error('Error en /premium/verify:', err.message);
     res.status(500).json({ error: 'No se pudo verificar el acceso Elite. Intenta de nuevo.' });
@@ -119,6 +132,15 @@ router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) =
 
     const ttl = Math.min(Math.max(parseInt(process.env.VIDEO_LINK_TTL_SECONDS, 10) || 900, 60), 3600);
     const signed = buildSignedVideoUrl(videoUid, ttl);
+    findLatestPurchaseByEmail(req.premium.username, 'elite').then((purchase) => {
+      if (purchase) {
+        logComplianceEvent({
+          purchaseId: purchase.id, email: req.premium.username, eventType: 'VIDEO_PLAY_STARTED',
+          resourceType: 'video', resourceId: moduleId
+        }).catch(() => {});
+      }
+    }).catch(() => {});
+
     return res.json({ ...signed, moduleId });
   } catch (err) {
     if (err.code === 'STREAM_NOT_CONFIGURED') {
@@ -167,6 +189,24 @@ router.get('/premium/replays', requirePremiumSession, async (req, res) => {
   } catch (err) {
     console.error('Error listando grabaciones Elite:', err.message);
     res.status(500).json({ error: 'No se pudieron cargar las grabaciones. Intenta de nuevo.' });
+  }
+});
+
+// Solo lectura: para que el catálogo del curso base sepa si mostrar la
+// tarjeta Elite como "bloqueada" o "activa". Usa la sesión de cuenta
+// normal (la misma del curso base), NO abre la zona Elite — eso sigue
+// exigiendo la segunda verificación en /premium/verify, exactamente
+// igual que siempre. Esto solo consulta el estado real en la base de
+// datos, nunca decide nada por sí mismo.
+router.get('/premium/status', requireAccount, async (req, res) => {
+  try {
+    const codes = await findAccessCodesByUsername(req.account.username);
+    const now = Math.floor(Date.now() / 1000);
+    const activeElite = codes.find((c) => c.courseId === 'elite' && c.expiresAt > now);
+    res.json({ active: !!activeElite, expiresAt: activeElite ? activeElite.expiresAt : null });
+  } catch (err) {
+    console.error('Error en /premium/status:', err.message);
+    res.status(500).json({ error: 'No se pudo consultar el estado.' });
   }
 });
 
