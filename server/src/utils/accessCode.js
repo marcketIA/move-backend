@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 
 const COURSE_ACCESS_DAYS = {
-  forex: 21,
+  weekend: 21, // Cupo al seminario en vivo de sábado y domingo ($70 preventa / $100 normal).
+  forex: 21,   // Se conserva por compatibilidad con códigos viejos ya emitidos.
   opciones: 21,
   elite: 21 // Plantillas + en vivo + grabaciones — mismo criterio de 21 días.
 };
