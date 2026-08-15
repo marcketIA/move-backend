@@ -101,6 +101,14 @@ router.post('/premium/verify', premiumVerifyLimiter, async (req, res) => {
   }
 });
 
+const TIER_TEMPLATE_ACCESS = {
+  full: ['panelpro', 'scalping', 'opciones'],
+  bridge_opciones: ['opciones'],
+  panelpro: ['panelpro', 'scalping'],
+  scalping: ['scalping'],
+  live_only: []
+};
+
 router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) => {
   const { moduleId } = req.params;
   const moduleMap = readJsonSetting('CF_STREAM_ELITE_MODULE_MAP');
@@ -121,6 +129,16 @@ router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) =
 
     if (!activeElite) {
       return res.status(403).json({ error: 'Tu acceso Elite ya no está activo.' });
+    }
+
+    if (moduleId.startsWith('tutorial-')) {
+      const templateKey = moduleId.replace('tutorial-', '');
+      const allowed = TIER_TEMPLATE_ACCESS[activeElite.tier] || [];
+      if (!allowed.includes(templateKey)) {
+        return res.status(403).json({
+          error: 'Este tutorial es solo para quien compró esa plantilla con nosotros. Si ya la tienes de antes, escríbenos por WhatsApp para verificarlo.'
+        });
+      }
     }
 
     const ttl = Math.min(Math.max(parseInt(process.env.VIDEO_LINK_TTL_SECONDS, 10) || 900, 60), 3600);
@@ -144,33 +162,57 @@ router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) =
   }
 });
 
+const TIER_LIVE_SCOPE = {
+  full: 'both',
+  bridge_opciones: 'both',
+  live_only: 'both',
+  panelpro: 'forex',
+  scalping: 'forex'
+};
+
 router.get('/premium/live', requirePremiumSession, async (req, res) => {
-  res.json({
-    forex: {
+  const codes = await findAccessCodesByUsername(req.premium.username);
+  const now = Math.floor(Date.now() / 1000);
+  const activeElite = codes.find((c) => c.courseId === 'elite' && c.expiresAt > now);
+  const scope = activeElite ? (TIER_LIVE_SCOPE[activeElite.tier] || 'both') : 'both';
+
+  const payload = {};
+  if (scope === 'both' || scope === 'forex') {
+    payload.forex = {
       zoomLink: process.env.ZOOM_LINK_FOREX || null,
       schedule: process.env.ELITE_SCHEDULE_FOREX || 'Lunes a Viernes, 8:00 PM'
-    },
-    opciones: {
+    };
+  }
+  if (scope === 'both' || scope === 'opciones') {
+    payload.opciones = {
       zoomLink: process.env.ZOOM_LINK_OPCIONES || null,
       schedule: process.env.ELITE_SCHEDULE_OPCIONES || 'Lunes a Viernes, 9:30 AM - 12:00 PM'
-    }
-  });
+    };
+  }
+  res.json(payload);
 });
 
 router.get('/premium/replays', requirePremiumSession, async (req, res) => {
   try {
+    const codes = await findAccessCodesByUsername(req.premium.username);
+    const now = Math.floor(Date.now() / 1000);
+    const activeElite = codes.find((c) => c.courseId === 'elite' && c.expiresAt > now);
+    const scope = activeElite ? (TIER_LIVE_SCOPE[activeElite.tier] || 'both') : 'both';
+
     const fourteenDaysAgo = Math.floor(Date.now() / 1000) - 14 * 24 * 60 * 60;
     const recordings = await listActiveEliteRecordings(fourteenDaysAgo);
 
-    const withUrls = recordings.map((r) => {
-      try {
-        const ttl = Math.min(Math.max(parseInt(process.env.VIDEO_LINK_TTL_SECONDS, 10) || 900, 60), 3600);
-        const signed = buildSignedVideoUrl(r.recordingUid, ttl);
-        return { id: r.id, courseType: r.courseType, sessionDate: r.sessionDate, ...signed };
-      } catch {
-        return null;
-      }
-    }).filter(Boolean);
+    const withUrls = recordings
+      .filter((r) => scope === 'both' || r.courseType === scope)
+      .map((r) => {
+        try {
+          const ttl = Math.min(Math.max(parseInt(process.env.VIDEO_LINK_TTL_SECONDS, 10) || 900, 60), 3600);
+          const signed = buildSignedVideoUrl(r.recordingUid, ttl);
+          return { id: r.id, courseType: r.courseType, sessionDate: r.sessionDate, ...signed };
+        } catch {
+          return null;
+        }
+      }).filter(Boolean);
 
     res.json({ recordings: withUrls });
   } catch (err) {
