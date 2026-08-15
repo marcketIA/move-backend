@@ -1,10 +1,14 @@
 import crypto from 'crypto';
 
 const COURSE_ACCESS_DAYS = {
-  weekend: 21, // Cupo al seminario en vivo de sábado y domingo ($70 preventa / $100 normal).
-  forex: 21,   // Se conserva por compatibilidad con códigos viejos ya emitidos.
+  weekend: 21,
+  forex: 21,
   opciones: 21,
-  elite: 21 // Plantillas + en vivo + grabaciones — mismo criterio de 21 días.
+  elite: 21 // default para el catálogo Elite — "live_only" usa 30 (ver abajo)
+};
+
+const ELITE_TIER_ACCESS_DAYS = {
+  live_only: 30 // $149.99/mes — un mes completo, no las 3 semanas de las demás.
 };
 
 export function generateAccessCode(prefix) {
@@ -12,7 +16,10 @@ export function generateAccessCode(prefix) {
   return `MOVE-${prefix.toUpperCase()}-${random}`;
 }
 
-export function accessDurationSeconds(courseId) {
+export function accessDurationSeconds(courseId, tier) {
+  if (courseId === 'elite' && tier && ELITE_TIER_ACCESS_DAYS[tier] !== undefined) {
+    return ELITE_TIER_ACCESS_DAYS[tier] * 24 * 60 * 60;
+  }
   const days = COURSE_ACCESS_DAYS[courseId] || 21;
   return days * 24 * 60 * 60;
 }
