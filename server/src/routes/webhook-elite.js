@@ -43,14 +43,13 @@ router.post('/webhook-elite', async (req, res) => {
 
     const username = session.metadata?.username || '';
     if (!username) {
-      // No debería pasar (checkout-elite.js siempre exige cuenta), pero si
-      // pasa, mejor rechazarlo explícito que crear un acceso sin dueño.
       console.error('Webhook Elite sin username en metadata. Session:', session.id);
       return res.json({ received: true, error: 'missing_username' });
     }
 
     const code = generateAccessCode('elite');
-    const durationSeconds = accessDurationSeconds('elite');
+    const tier = session.metadata?.tier || 'full';
+    const durationSeconds = accessDurationSeconds('elite', tier);
     const now = Math.floor(Date.now() / 1000);
 
     await saveAccessCode({
@@ -61,14 +60,12 @@ router.post('/webhook-elite', async (req, res) => {
       username,
       stripeSessionId: session.id,
       purchasedAt: now,
-      expiresAt: now + durationSeconds
+      expiresAt: now + durationSeconds,
+      tier
     });
 
-    console.log(`✅ Pago Elite confirmado. Código: ${code} · cuenta: ${username} · expira en ${durationSeconds / 86400} días`);
+    console.log(`✅ Pago Elite confirmado (${tier}). Código: ${code} · cuenta: ${username} · expira en ${durationSeconds / 86400} días`);
 
-    // Expediente de evidencia — se activa DESPUÉS de dar el acceso real,
-    // nunca decide si el acceso se da o no (eso lo sigue haciendo lo de
-    // arriba, exactamente igual que siempre).
     const purchaseId = session.metadata?.purchaseId;
     if (purchaseId) {
       try {
