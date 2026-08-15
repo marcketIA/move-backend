@@ -1,35 +1,74 @@
-// routes/checkout-elite.js — checkout de Stripe SOLO para la oferta Elite
+// routes/checkout-elite.js — checkout de Stripe para el CATÁLOGO Elite
 // post-curso (plantillas + en vivo entre semana + grabaciones). Archivo
 // separado de checkout.js a propósito: el cupo del fin de semana nunca
 // depende de este código, ni al revés.
 //
-// Ahora tiene DOS niveles de precio, elegidos por el alumno con `tier`:
-//   - tier "base": $500 — ya tiene la plantilla, solo quiere la ruta
-//     completa (en vivo + grabaciones) sin volver a pagarla.
-//   - tier "full" (default): $1,099 — incluye la plantilla + todo lo
-//     demás. Es la opción que se muestra destacada/dorada en el frontend.
-//
-// Ahora exige los DOS consentimientos (autorización de compra + entrega
-// digital inmediata / sin reembolso) ANTES de crear la sesión de pago —
-// si no vienen aceptados, no se genera el link de Stripe. Queda guardado
-// exactamente qué aceptó, cuándo, y desde qué IP, para poder mostrarlo
-// si algún día hay una disputa con el banco, Stripe o PayPal.
-
-// productCode se deja igual ('elite') en los dos niveles a propósito: el
+// productCode se deja igual ('elite') en los 5 productos a propósito: el
 // resto del sistema (premium.js, findLatestPurchaseByEmail, access_codes)
 // busca por productCode/courseId 'elite' para decidir si la zona Elite está
-// activa, sin importar qué tier pagó. La diferencia de tier queda en
-// productName y en la metadata de Stripe, no en el código de acceso.
+// activa, sin importar cuál producto pagó. La diferencia real queda en
+// `tier` (guardado en access_codes.tier) — eso es lo que decide qué en
+// vivo y qué plantilla le corresponde a cada quien.
+//
+// Los 5 productos del catálogo:
+//   - "full" ($1,099): la más completa. Panel Pro + Scalping + Opciones,
+//     en vivo Forex Y Opciones (3 semanas), grabaciones de ambas.
+//     Es la que se muestra destacada/dorada — la mejor inversión.
+//   - "bridge_opciones" ($550): ya tiene las DOS plantillas de Forex
+//     (Panel Pro y Scalping), le falta Opciones. Incluye la plantilla de
+//     Opciones + en vivo Forex Y Opciones + grabaciones de ambas.
+//   - "panelpro" ($890): plantilla Panel Pro + Scalping DE REGALO. Solo
+//     en vivo de Forex (3 semanas) + grabaciones de Forex. No incluye
+//     Opciones (no tiene esa plantilla).
+//   - "scalping" ($576): solo plantilla Scalping (sin el regalo de Panel
+//     Pro). Solo en vivo de Forex + grabaciones de Forex.
+//   - "live_only" ($150): ya tiene las DOS plantillas de Forex, solo
+//     quiere el en vivo (Forex y Opciones si ya las tiene) sin ninguna
+//     plantilla nueva. Es la única opción sin entrega de plantilla.
+//
+// Todas duran 21 días (3 semanas) — no hay diferencia de duración entre
+// productos, a diferencia del esquema anterior.
 const ELITE_TIERS = {
-  base: {
-    envVar: 'STRIPE_PRICE_ELITE_BASE',
-    productCode: 'elite',
-    productName: 'Move IA Market — Ruta Elite (ya tengo la plantilla)'
-  },
   full: {
     envVar: 'STRIPE_PRICE_ELITE_FULL',
     productCode: 'elite',
-    productName: 'Move IA Market — Ruta Elite completa (con plantilla)'
+    productName: 'Move IA Market — La Completa (Panel Pro + Scalping + Opciones)',
+    liveScope: 'both'
+  },
+  bridge_opciones: {
+    envVar: 'STRIPE_PRICE_ELITE_BRIDGE_OPCIONES',
+    productCode: 'elite',
+    productName: 'Move IA Market — Plantilla de Opciones (ya tengo las de Forex)',
+    liveScope: 'both'
+  },
+  panelpro: {
+    envVar: 'STRIPE_PRICE_ELITE_PANELPRO',
+    productCode: 'elite',
+    productName: 'Move IA Market — Plantilla Panel Pro (+ Scalping de regalo)',
+    liveScope: 'forex'
+  },
+  scalping: {
+    envVar: 'STRIPE_PRICE_ELITE_SCALPING',
+    productCode: 'elite',
+    productName: 'Move IA Market — Plantilla Scalping Pro',
+    liveScope: 'forex'
+  },
+  live_only: {
+    envVar: 'STRIPE_PRICE_ELITE_LIVE_ONLY',
+    productCode: 'elite',
+    productName: 'Move IA Market — Solo en vivo, $149.99/mes (ya tengo las plantillas)',
+    liveScope: 'both',
+    // Nadie de esta cohorte puede calificar todavía (la plantilla de
+    // Opciones recién se está creando) — así que este producto se
+    // muestra en el catálogo pero queda bloqueado hasta la fecha que
+    // pongas en ELITE_LIVE_ONLY_UNLOCKS_AT_UNIX (normalmente el mes que
+    // viene). El servidor lo rechaza aunque alguien intente pagarlo
+    // directo por API, no solo lo oculta en el frontend.
+    checkAvailable: () => {
+      const unlocksAt = parseInt(process.env.ELITE_LIVE_ONLY_UNLOCKS_AT_UNIX, 10);
+      const now = Math.floor(Date.now() / 1000);
+      return Number.isFinite(unlocksAt) && now >= unlocksAt;
+    }
   }
 };
 
@@ -49,6 +88,12 @@ router.post('/checkout-elite', requireAccount, async (req, res) => {
 
     const cleanTier = ELITE_TIERS[tier] ? tier : 'full';
     const tierConfig = ELITE_TIERS[cleanTier];
+
+    if (tierConfig.checkAvailable && !tierConfig.checkAvailable()) {
+      return res.status(403).json({
+        error: 'Esta opción todavía no está disponible — se activa el próximo mes, cuando ya tengas las dos plantillas.'
+      });
+    }
 
     if (!acceptAuthorization || !acceptDigitalAccess) {
       return res.status(400).json({ error: 'Debes marcar las dos casillas de autorización antes de continuar al pago.' });
@@ -115,6 +160,10 @@ router.post('/checkout-elite', requireAccount, async (req, res) => {
 
 router.get('/checkout-elite/terms', (req, res) => {
   res.json({ version: TERMS_VERSION, authorization: TERMS_AUTHORIZATION, digitalAccess: TERMS_DIGITAL_ACCESS });
+});
+
+router.get('/checkout-elite/live-only-status', (req, res) => {
+  res.json({ available: ELITE_TIERS.live_only.checkAvailable() });
 });
 
 export default router;
