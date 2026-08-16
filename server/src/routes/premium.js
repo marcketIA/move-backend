@@ -18,6 +18,8 @@ import { buildSignedVideoUrl } from '../utils/signedUrl.js';
 
 const router = Router();
 
+// Más estricto que el login normal (8 en 15 min) porque esto protege el
+// producto de mayor valor — 5 intentos en 15 minutos.
 const premiumVerifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -26,6 +28,8 @@ const premiumVerifyLimiter = rateLimit({
   message: { error: 'Demasiados intentos de verificación Elite. Espera unos minutos e intenta de nuevo.' }
 });
 
+// Máximo 2 dispositivos para la zona Elite (ej. 1 computadora + 1 celular),
+// más estricto que el curso base a propósito, por el valor del producto.
 const MAX_ELITE_DEVICES = 2;
 
 function readJsonSetting(name) {
@@ -36,6 +40,11 @@ function readJsonSetting(name) {
   }
 }
 
+// Le dice al dashboard si ya toca MOSTRAR la oferta Elite ($500/$1,099).
+// Se controla con una sola fecha en Render (ELITE_OFFER_UNLOCKS_AT_UNIX) —
+// mientras no pase esa fecha (fin del curso del domingo), esto responde
+// { open: false } y el frontend no debe mostrar los dos cuadros de precio.
+// No requiere sesión: es solo una fecha, no expone datos de nadie.
 router.get('/premium/elite-window', (req, res) => {
   const unlocksAt = parseInt(process.env.ELITE_OFFER_UNLOCKS_AT_UNIX, 10);
   const now = Math.floor(Date.now() / 1000);
@@ -66,6 +75,10 @@ router.post('/premium/verify', premiumVerifyLimiter, async (req, res) => {
       return res.status(403).json({ error: 'Esta cuenta no tiene la Plantilla Elite activa.' });
     }
 
+    // Control de dispositivos: si este dispositivo ya es conocido, lo
+    // actualiza sin contar como uno nuevo. Si es distinto y ya hay 2,
+    // se bloquea — mismo criterio que el curso base, pero con límite
+    // numérico explícito porque aquí sí importa mucho más.
     const label = (deviceLabel || req.headers['user-agent'] || 'dispositivo').slice(0, 200);
     const currentCount = await countDevicesByUsername(cleanUsername);
     const knownDevices = await listDevicesByUsername(cleanUsername);
@@ -82,11 +95,14 @@ router.post('/premium/verify', premiumVerifyLimiter, async (req, res) => {
     const token = jwt.sign(
       { username: cleanUsername, type: 'premium' },
       process.env.SESSION_SECRET,
-      { expiresIn: '2h' }
+      { expiresIn: '2h' } // sesión corta a propósito — es la zona más valiosa.
     );
 
     res.json({ token, expiresAt: activeElite.expiresAt });
 
+    // Evidencia: se registra DESPUÉS de responder, para no demorar el
+    // login por esto. Si falla, no afecta el acceso — solo se pierde
+    // ese registro puntual de actividad.
     findLatestPurchaseByEmail(cleanUsername, 'elite').then((purchase) => {
       if (purchase) {
         logComplianceEvent({
@@ -101,13 +117,38 @@ router.post('/premium/verify', premiumVerifyLimiter, async (req, res) => {
   }
 });
 
+// Qué VIDEOS DE PLANTILLA (el tutorial de "cómo usar Panel Pro/Scalping/
+// Opciones") desbloquea cada tier — a propósito distinto de TIER_LIVE_SCOPE
+// de arriba. Alguien puede tener derecho a los en vivos de Forex Y
+// Opciones (por ejemplo "bridge_opciones") sin tener derecho al video
+// tutorial de las plantillas de Forex, porque esas nunca las compró CON
+// NOSOTROS — decir "ya las tengo de hace un año" no se puede comprobar,
+// así que el video de esa plantilla no se entrega solo por eso. Solo se
+// entrega el tutorial de la plantilla que sí pagó en esta compra.
+// "basica" es una plantilla nueva: se REGALA con Panel Pro o con Scalping,
+// pero no se vende sola por ahora (no tiene tier propio ni price_id).
 const TIER_TEMPLATE_ACCESS = {
-  full: ['panelpro', 'scalping', 'opciones'],
+  full: ['panelpro', 'scalping', 'basica', 'opciones'],
   bridge_opciones: ['opciones'],
-  panelpro: ['panelpro', 'scalping'],
-  scalping: ['scalping'],
-  live_only: []
+  panelpro: ['panelpro', 'scalping', 'basica'], // Scalping Y la básica van de regalo con Panel Pro.
+  scalping: ['scalping', 'basica'], // La básica va de regalo con Scalping (pero NO Panel Pro).
+  live_only: [] // Ya tiene las plantillas de antes — no se le debe ningún tutorial nuevo.
 };
+
+// Una cuenta puede tener MÁS DE UNA compra Elite activa a la vez (ej. compró
+// Scalping un mes y Opciones el siguiente) — nunca hay que quedarse solo con
+// la primera que aparezca en la base de datos, o se le bloquea acceso que sí
+// pagó. Esta función junta el acceso de TODAS sus compras activas en una
+// sola lista, sin duplicados.
+function combinedTemplateAccess(codes, now) {
+  const allowed = new Set();
+  codes
+    .filter((c) => c.courseId === 'elite' && c.expiresAt > now)
+    .forEach((c) => {
+      (TIER_TEMPLATE_ACCESS[c.tier] || []).forEach((t) => allowed.add(t));
+    });
+  return allowed;
+}
 
 router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) => {
   const { moduleId } = req.params;
@@ -123,18 +164,25 @@ router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) =
   }
 
   try {
+    // Igual que en video.js: el JWT es solo la sesión, se vuelve a
+    // consultar la base de datos para que una expiración se aplique al
+    // siguiente intento de ver una clase, no solo al momento de verificar.
     const codes = await findAccessCodesByUsername(req.premium.username);
     const now = Math.floor(Date.now() / 1000);
-    const activeElite = codes.find((c) => c.courseId === 'elite' && c.expiresAt > now);
+    const activeElite = codes.some((c) => c.courseId === 'elite' && c.expiresAt > now);
 
     if (!activeElite) {
       return res.status(403).json({ error: 'Tu acceso Elite ya no está activo.' });
     }
 
+    // Convención de nombres: los videos tutorial de plantilla se llaman
+    // "tutorial-panelpro", "tutorial-scalping", "tutorial-opciones" en
+    // CF_STREAM_ELITE_MODULE_MAP. Cualquier otro moduleId (una clase en
+    // vivo grabada, por ejemplo) no pasa por este chequeo extra.
     if (moduleId.startsWith('tutorial-')) {
       const templateKey = moduleId.replace('tutorial-', '');
-      const allowed = TIER_TEMPLATE_ACCESS[activeElite.tier] || [];
-      if (!allowed.includes(templateKey)) {
+      const allowed = combinedTemplateAccess(codes, now);
+      if (!allowed.has(templateKey)) {
         return res.status(403).json({
           error: 'Este tutorial es solo para quien compró esa plantilla con nosotros. Si ya la tienes de antes, escríbenos por WhatsApp para verificarlo.'
         });
@@ -162,21 +210,50 @@ router.get('/premium/video/:moduleId', requirePremiumSession, async (req, res) =
   }
 });
 
+// El link de Zoom es un salón fijo que se reutiliza cada día (no hace
+// falta crear una fila nueva en la base de datos cada mañana). Si algún
+// día lo quieres cambiar, solo se actualiza la variable de entorno en
+// Render, sin tocar código.
+// El alcance de cada tier: qué en vivo/grabaciones desbloquea. Solo
+// "panelpro" y "scalping" son Forex-only — el resto (full, bridge_opciones,
+// live_only) da acceso a Forex Y Opciones. Se mantiene aquí también (y no
+// solo en checkout-elite.js) porque premium.js no debe depender de ese
+// archivo para decidir accesos — así un cambio en uno no rompe al otro
+// silenciosamente.
 const TIER_LIVE_SCOPE = {
   full: 'both',
-  bridge_opciones: 'both',
+  bridge_opciones: 'both', // Comprar Opciones es lo que "activa" el acceso a TODO este mes (Forex y Opciones) — ya tener las plantillas de Forex de una cohorte anterior no da acceso por sí solo.
   live_only: 'both',
   panelpro: 'forex',
   scalping: 'forex'
 };
 
+// Igual que combinedTemplateAccess: si tiene varias compras activas a la
+// vez, el alcance final es la UNIÓN de todas — no la de la primera que
+// aparezca. Si cualquiera de sus compras cubre "both", ya es "both".
+function combinedLiveScope(codes, now) {
+  let scope = null; // null = sin ninguna compra activa todavía
+  codes
+    .filter((c) => c.courseId === 'elite' && c.expiresAt > now)
+    .forEach((c) => {
+      const s = TIER_LIVE_SCOPE[c.tier] || 'both';
+      if (scope === null) scope = s;
+      else if (scope !== s) scope = 'both';
+    });
+  return scope || 'both';
+}
+
 router.get('/premium/live', requirePremiumSession, async (req, res) => {
   const codes = await findAccessCodesByUsername(req.premium.username);
   const now = Math.floor(Date.now() / 1000);
-  const activeElite = codes.find((c) => c.courseId === 'elite' && c.expiresAt > now);
-  const scope = activeElite ? (TIER_LIVE_SCOPE[activeElite.tier] || 'both') : 'both';
+  const scope = combinedLiveScope(codes, now);
 
   const payload = {};
+  // Cada lado (Forex/Opciones) solo se incluye si el tier comprado lo
+  // cubre — si no, el frontend nunca ve ese link, en vez de mostrarlo y
+  // confiar en que la interfaz lo oculte. "bridge_opciones" es el caso
+  // que motivó esto: ya vivió las semanas de Forex en una cohorte
+  // anterior, así que esta vez solo le corresponde Opciones.
   if (scope === 'both' || scope === 'forex') {
     payload.forex = {
       zoomLink: process.env.ZOOM_LINK_FOREX || null,
@@ -192,12 +269,13 @@ router.get('/premium/live', requirePremiumSession, async (req, res) => {
   res.json(payload);
 });
 
+// Grabaciones de los últimos 14 días — cada una se sube manualmente a
+// Cloudflare Stream y se registra con POST /admin/elite-sessions.
 router.get('/premium/replays', requirePremiumSession, async (req, res) => {
   try {
     const codes = await findAccessCodesByUsername(req.premium.username);
     const now = Math.floor(Date.now() / 1000);
-    const activeElite = codes.find((c) => c.courseId === 'elite' && c.expiresAt > now);
-    const scope = activeElite ? (TIER_LIVE_SCOPE[activeElite.tier] || 'both') : 'both';
+    const scope = combinedLiveScope(codes, now);
 
     const fourteenDaysAgo = Math.floor(Date.now() / 1000) - 14 * 24 * 60 * 60;
     const recordings = await listActiveEliteRecordings(fourteenDaysAgo);
@@ -210,7 +288,7 @@ router.get('/premium/replays', requirePremiumSession, async (req, res) => {
           const signed = buildSignedVideoUrl(r.recordingUid, ttl);
           return { id: r.id, courseType: r.courseType, sessionDate: r.sessionDate, ...signed };
         } catch {
-          return null;
+          return null; // Cloudflare Stream no configurado todavía — se omite en vez de romper la lista completa.
         }
       }).filter(Boolean);
 
@@ -221,6 +299,12 @@ router.get('/premium/replays', requirePremiumSession, async (req, res) => {
   }
 });
 
+// Solo lectura: para que el catálogo del curso base sepa si mostrar la
+// tarjeta Elite como "bloqueada" o "activa". Usa la sesión de cuenta
+// normal (la misma del curso base), NO abre la zona Elite — eso sigue
+// exigiendo la segunda verificación en /premium/verify, exactamente
+// igual que siempre. Esto solo consulta el estado real en la base de
+// datos, nunca decide nada por sí mismo.
 router.get('/premium/status', requireAccount, async (req, res) => {
   try {
     const codes = await findAccessCodesByUsername(req.account.username);
