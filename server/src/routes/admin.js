@@ -9,7 +9,7 @@
 // por error ni a propósito.
 
 import { Router } from 'express';
-import { allAccessCodes, saveEliteSession, findCompliancePurchaseById, getComplianceConsents, getComplianceActivitySummary, searchCompliancePurchasesByEmail } from '../db.js';
+import { allAccessCodes, saveEliteSession, findCompliancePurchaseById, getComplianceConsents, getComplianceActivitySummary, searchCompliancePurchasesByEmail, listRecentZoomAlerts } from '../db.js';
 
 const router = Router();
 
@@ -163,6 +163,20 @@ Stripe indicada arriba. Generado: ${new Date().toISOString()}
   } catch (err) {
     console.error('Error en /admin/compliance/report:', err.message);
     res.status(500).json({ error: 'No se pudo generar el reporte.' });
+  }
+});
+
+// Historial de "entró 2 veces al Zoom" de las últimas 24 horas — lo
+// mismo que llega por WhatsApp, pero también visible aquí por si en el
+// momento no viste el mensaje.
+router.get('/admin/zoom-alerts', requireAdmin, async (req, res) => {
+  try {
+    const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+    const alerts = await listRecentZoomAlerts(since);
+    res.json({ alerts });
+  } catch (err) {
+    console.error('Error en /admin/zoom-alerts:', err.message);
+    res.status(500).json({ error: 'No se pudieron cargar las alertas.' });
   }
 });
 
