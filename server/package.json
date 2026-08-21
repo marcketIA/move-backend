@@ -9,13 +9,14 @@
     "stripe:listen": "stripe listen --forward-to localhost:8787/api/webhook"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "stripe": "^16.2.0",
-    "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
-    "pg": "^8.13.0"
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.0",
+    "stripe": "^16.2.0",
+    "twilio": "^6.1.0"
   }
 }
