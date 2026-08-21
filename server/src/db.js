@@ -13,9 +13,14 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('localhost')
     ? false
-    : { rejectUnauthorized: false }
+    : { rejectUnauthorized: false } // necesario para Supabase/Neon/Railway
 });
 
+// Sin este manejador, un error de conexión en un cliente inactivo del pool
+// (por ejemplo, la base de datos se reinicia o hay un corte de red)
+// tumba TODO el proceso de Node, no solo la petición que lo causó — el
+// servidor completo deja de responder aunque el resto del código esté
+// bien. Este es el arreglo documentado por la librería `pg` para eso.
 pool.on('error', (err) => {
   console.error('Error inesperado en el pool de Postgres:', err.message);
 });
@@ -39,6 +44,9 @@ export async function findAccessCode(code) {
   return result.rows[0] ? rowToAccessCode(result.rows[0]) : null;
 }
 
+// Usada por webhook.js para que un mismo checkout.session de Stripe (que
+// puede notificarse más de una vez por reintentos) nunca genere dos
+// matrículas — ver la comprobación de idempotencia ahí.
 export async function findAccessCodeByStripeSession(stripeSessionId) {
   const result = await pool.query(
     'SELECT * FROM access_codes WHERE stripe_session_id = $1',
@@ -47,6 +55,10 @@ export async function findAccessCodeByStripeSession(stripeSessionId) {
   return result.rows[0] ? rowToAccessCode(result.rows[0]) : null;
 }
 
+// Revocación por reembolso/disputa (ver routes/webhook-refunds.js). No borra
+// el registro, solo lo vence de inmediato — toda la lógica de "¿tiene
+// acceso activo?" ya revisa expires_at > ahora, así que esto corta el
+// acceso al instante sin tocar ninguna otra parte del sistema.
 export async function revokeAccessByStripeSession(stripeSessionId) {
   const now = Math.floor(Date.now() / 1000);
   const result = await pool.query(
@@ -184,6 +196,8 @@ export async function saveEliteSession(record) {
   return rowToEliteSession(result.rows[0]);
 }
 
+// Sesión de HOY para un curso — la usa /premium/live para saber si hay
+// clase en vivo ahora mismo y con qué link de Zoom.
 export async function findTodaysEliteSession(courseType, dayStart, dayEnd) {
   const result = await pool.query(
     `SELECT * FROM elite_sessions
@@ -194,6 +208,7 @@ export async function findTodaysEliteSession(courseType, dayStart, dayEnd) {
   return result.rows[0] ? rowToEliteSession(result.rows[0]) : null;
 }
 
+// Grabaciones vigentes (últimos 14 días) — las usa /premium/replays.
 export async function listActiveEliteRecordings(sinceEpoch) {
   const result = await pool.query(
     `SELECT * FROM elite_sessions
@@ -391,4 +406,31 @@ function rowToComplianceConsent(row) {
     ipAddress: row.ip_address,
     userAgent: row.user_agent
   };
+}
+
+// ---- Alertas de "mismo correo entró 2 veces al Zoom" ----
+// Se guardan en la base de datos (no solo en memoria) para que el panel
+// las pueda mostrar aunque Andy no lo tuviera abierto justo en el
+// momento en que pasó — así no se pierde el aviso.
+export async function saveZoomDuplicateAlert({ email, meetingTopic, detectedAt }) {
+  const result = await pool.query(
+    `INSERT INTO zoom_duplicate_alerts (email, meeting_topic, detected_at)
+     VALUES ($1, $2, $3) RETURNING id`,
+    [email, meetingTopic, detectedAt]
+  );
+  return result.rows[0].id;
+}
+
+export async function listRecentZoomAlerts(sinceEpoch) {
+  const result = await pool.query(
+    `SELECT id, email, meeting_topic, detected_at FROM zoom_duplicate_alerts
+     WHERE detected_at > $1 ORDER BY detected_at DESC LIMIT 50`,
+    [sinceEpoch]
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    meetingTopic: row.meeting_topic,
+    detectedAt: Number(row.detected_at)
+  }));
 }
