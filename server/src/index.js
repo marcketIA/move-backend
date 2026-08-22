@@ -13,6 +13,8 @@ import premiumRoute from './routes/premium.js';
 import adminRoute from './routes/admin.js';
 import liveWeekendRoute from './routes/live-weekend.js';
 import webhookRefundsRoute from './routes/webhook-refunds.js';
+import zoomWebhookRoute from './routes/zoom-webhook.js';
+import checkoutStatusRoute from './routes/checkout-status.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -67,6 +69,9 @@ app.use('/api', webhookEliteRoute);
 app.use('/api/webhook-refunds', express.raw({ type: 'application/json', limit: '1mb' }));
 app.use('/api', webhookRefundsRoute);
 
+app.use('/api/zoom-webhook', express.raw({ type: 'application/json', limit: '1mb' }));
+app.use('/api', zoomWebhookRoute);
+
 app.use(express.json({ limit: '64kb' }));
 
 app.use('/api', checkoutRoute);
@@ -77,6 +82,7 @@ app.use('/api', checkoutEliteRoute);
 app.use('/api', premiumRoute);
 app.use('/api', adminRoute);
 app.use('/api', liveWeekendRoute);
+app.use('/api', checkoutStatusRoute);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
